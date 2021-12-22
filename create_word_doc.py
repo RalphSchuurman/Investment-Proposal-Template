@@ -14,9 +14,15 @@ def create_doc(companyName, sector, industry, current_price,
                 fiftyTwoWeek, targetMeanPrice,
                marketCap, beta, dividendRate, companyInfo, companyLogo,
                shortRatio, shortPercentage, dividendHistory,
-               news, competition_df,plot,author):
+               news, competition_df,plot,author,imagelogo):
     document = Document('Empty_koopvoorstel.docx')
 
+    ## add logo
+    logokeyword = "Logo:"
+    for paragraph in document.paragraphs:
+        if logokeyword in paragraph.text:
+            r = paragraph.add_run()
+            r.add_picture(imagelogo)
 
     # replace the text in paragraphs
     for paragraph in document.paragraphs:
@@ -78,6 +84,7 @@ def create_doc(companyName, sector, industry, current_price,
         if keyword in paragraph.text:
             r = paragraph.add_run()
             r.add_picture(plot)
+
 
     return(document)
 

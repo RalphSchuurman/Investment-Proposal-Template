@@ -9,21 +9,26 @@ import io
 from create_word_doc import create_doc
 import matplotlib.pyplot as plt
 import seaborn as sns
+import requests
+from numerize import numerize
 
 # To run use streamlit run template.py
 # to exit, use control-c
+st.set_page_config(layout="wide")
 st.sidebar.subheader("""B.R.O.O.D. Beleggers Template""")
 user_input_ticker = st.sidebar.text_input("Geef ticker van het aandeel op","AAPL")
 author = st.sidebar.text_input("Uw naam", "Ralph Schuurman")
-user_input_competitors = st.sidebar.text_input("Geef Namen/Tickers op van aandelen concurrenten, scheidt aandelen d.m.v. een komma:", "")
+user_input_competitors = st.sidebar.text_input("Geef Namen/Tickers op van aandelen concurrenten, scheidt aandelen d.m.v. een komma:", "MSFT,TSLA")
 # Date = current date
 date = datetime.today()
 
 
+col1, col2, col3 = st.columns(3)
 
 def main():
 
     ticker = yf.Ticker(user_input_ticker)
+
     #company name
     companyName = 'Name: ' + ticker.info['shortName']
     shortcompanyName = ticker.info['shortName']
@@ -38,28 +43,34 @@ def main():
     # 1 year target
     targetMeanPrice = "1 Year Target: " + str(ticker.info['targetMeanPrice'])
     # Market cap
-    marketCap = "Market Cap: " + str(ticker.info['marketCap'])
+    marketCap = "Market Cap: " + str(numerize.numerize(ticker.info['marketCap']))
     # Beta
-    beta = "Beta: " + str(ticker.info['beta'])
+    beta = "Beta: " + str(round(ticker.info['beta'],3))
 
-    dividendRate = "Forward Dividend: " + str(ticker.info['trailingAnnualDividendYield']) + " (" + str(ticker.info[
-        'trailingAnnualDividendRate']) + ")"
+    dividendRate = "Forward Dividend: " + str(ticker.info['trailingAnnualDividendRate']) + " (" + str(round(ticker.info['trailingAnnualDividendYield']*100,2)) + "%)"
+
+    dividendHistory = ticker.dividends
 
     # Company info + company logo
     companyInfo = ticker.info['longBusinessSummary']  # company info
     companyLogo = ticker.info['logo_url']  # company logo
 
-    st.write(companyName)
-    st.write(sector)
-    st.write(industry)
-    st.write(current_price)
-    st.write(fiftyTwoWeek)
-    st.write(targetMeanPrice)
-    st.write(marketCap)
-    st.write(beta)
-    st.write(dividendRate)
-    st.write(companyInfo)
+    #save company logo to put in docx
+    response = requests.get(companyLogo, stream=True)
+    imagelogo = io.BytesIO(response.content)
 
+
+    col1.image(companyLogo)
+    col1.write(companyName)
+    col1.write(sector)
+    col1.write(industry)
+    col1.write(current_price)
+    col1.write(fiftyTwoWeek)
+    col1.write(targetMeanPrice)
+    col1.write(marketCap)
+    col1.write(beta)
+    col1.write(dividendRate)
+    col1.write(companyInfo)
 
     user_list = [user_input_ticker]
     competitorlist = user_input_competitors.split(",")
@@ -89,22 +100,23 @@ def main():
     shortRatio = "Short Ratio: " + str(ticker.info['shortRatio'])
     # Short % of shares outstanding
     shortPercentage = "Short % of Shares Outstanding: " + str(ticker.info['shortPercentOfFloat'])
+    col1.write(shortRatio)
+    col1.write(shortPercentage)
     # Dividend history
-    dividendHistory = ticker.dividends
-    dividend_df = dividendHistory.to_frame()
 
+    dividend_df = dividendHistory.to_frame()
+    dividend_df.index = dividend_df.index.strftime('%Y-%m-%d')
     dividend_df = dividend_df.sort_values(by='Date', ascending=False).head(10)
 
     # News regarding company
     #news = ticker.news
     news = "no news"
 
-    # company logo
-    st.dataframe(compare_df)
+    col2.dataframe(compare_df)
 
     # Graph
     graph_data = ticker.history(period = '2y',interval = '1d' )
-    st.line_chart(graph_data.Close) #for on the webpage
+    col2.line_chart(graph_data.Close) #for on the webpage
 
     #graph to use in document
     memfile = io.BytesIO()
@@ -112,15 +124,14 @@ def main():
     plt.xticks(rotation=30)
     plt.savefig(memfile)
 
-    st.write(shortRatio)
-    st.write(shortPercentage)
-    st.dataframe(dividend_df)
+
+    col3.dataframe(dividend_df)
 
     document = create_doc(companyName, sector, industry, current_price,
                fiftyTwoWeek, targetMeanPrice,
                marketCap, beta, dividendRate, companyInfo, companyLogo,
                shortRatio, shortPercentage, dividend_df,
-               news, compare_df,memfile, author)
+               news, compare_df,memfile, author,imagelogo)
 
     file_stream = io.BytesIO()
     # Save the .docx to the buffer
@@ -131,12 +142,13 @@ def main():
     b64 = base64.b64encode(file_stream.getvalue()).decode()
     filename = "Voorstel " + shortcompanyName + ".docx"
     download_button_str = download_button(b64, filename, f'Click here to download {filename}')
-    st.markdown(download_button_str, unsafe_allow_html=True)
+    st.sidebar.markdown(download_button_str, unsafe_allow_html=True)
 
 
 if st.sidebar.button('GO'):
     main()
 
+st.sidebar.write("Als het document klaar is komt hier een download link")
 #if st.button('test'):
     #main()
 

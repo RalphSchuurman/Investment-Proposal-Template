@@ -26,7 +26,11 @@ date = datetime.today()
 col1, col2, col3 = st.columns(3)
 
 def main():
+    col1.subheader('Bedrijfsinformatie')
+    col2.subheader('Concurrentie en koersgrafiek')
+    col3.subheader('Dividenduitkeringen')
 
+    data_1_laden = col1.text('Laden...')
     ticker = yf.Ticker(user_input_ticker)
 
     #company name
@@ -71,7 +75,8 @@ def main():
     col1.write(beta)
     col1.write(dividendRate)
     col1.write(companyInfo)
-
+    data_1_laden.text('Laden... klaar')
+    data_2_laden = col2.text('Laden...')
     user_list = [user_input_ticker]
     competitorlist = user_input_competitors.split(",")
     comparingList = user_list + competitorlist
@@ -100,13 +105,7 @@ def main():
     shortRatio = "Short Ratio: " + str(ticker.info['shortRatio'])
     # Short % of shares outstanding
     shortPercentage = "Short % of Shares Outstanding: " + str(ticker.info['shortPercentOfFloat'])
-    col1.write(shortRatio)
-    col1.write(shortPercentage)
-    # Dividend history
 
-    dividend_df = dividendHistory.to_frame()
-    dividend_df.index = dividend_df.index.strftime('%Y-%m-%d')
-    dividend_df = dividend_df.sort_values(by='Date', ascending=False).head(10)
 
     # News regarding company
     #news = ticker.news
@@ -118,6 +117,8 @@ def main():
     graph_data = ticker.history(period = '2y',interval = '1d' )
     col2.line_chart(graph_data.Close) #for on the webpage
 
+    data_2_laden.text('Laden... klaar')
+
     #graph to use in document
     memfile = io.BytesIO()
     sns.lineplot(data = graph_data.Close)
@@ -125,8 +126,21 @@ def main():
     plt.savefig(memfile)
 
 
+
+
+    # Dividend history
+    data_3_laden = col3.text('Laden...')
+    dividend_df = dividendHistory.to_frame()
+    dividend_df.index = dividend_df.index.strftime('%Y-%m-%d')
+    dividend_df = dividend_df.sort_values(by='Date', ascending=False).head(10)
     col3.dataframe(dividend_df)
 
+    col3.subheader("Short ratio's")
+    col3.write(shortRatio)
+    col3.write(shortPercentage)
+
+
+    data_3_laden.text('Laden... klaar')
     document = create_doc(companyName, sector, industry, current_price,
                fiftyTwoWeek, targetMeanPrice,
                marketCap, beta, dividendRate, companyInfo, companyLogo,

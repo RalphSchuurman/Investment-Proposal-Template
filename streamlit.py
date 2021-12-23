@@ -13,7 +13,7 @@ import requests
 from numerize import numerize
 from PIL import Image
 
-# To run use streamlit run template.py
+# To run use streamlit run streamlit.py
 # to exit, use control-c
 st.set_page_config(layout="wide")
 broodlogo = Image.open('Broodlogo.png')

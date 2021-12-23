@@ -11,10 +11,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
 from numerize import numerize
+from PIL import Image
 
 # To run use streamlit run template.py
 # to exit, use control-c
 st.set_page_config(layout="wide")
+broodlogo = Image.open('Broodlogo.png')
+
+st.sidebar.image(broodlogo)
 st.sidebar.subheader("""B.R.O.O.D. Beleggers Template""")
 user_input_ticker = st.sidebar.text_input("Geef ticker van het aandeel op","AAPL")
 author = st.sidebar.text_input("Uw naam", "Ralph Schuurman")

@@ -17,12 +17,7 @@ def create_doc(companyName, sector, industry, current_price,
                news, competition_df,plot,author,imagelogo):
     document = Document('Empty_koopvoorstel.docx')
 
-    ## add logo
-    logokeyword = "Logo:"
-    for paragraph in document.paragraphs:
-        if logokeyword in paragraph.text:
-            r = paragraph.add_run()
-            r.add_picture(imagelogo)
+
 
     # replace the text in paragraphs
     for paragraph in document.paragraphs:
@@ -30,6 +25,15 @@ def create_doc(companyName, sector, industry, current_price,
         find_replace("[COMPANY_INFO]",companyInfo, paragraph)
         find_replace("[Short Ratio:]", shortRatio, paragraph)
         find_replace("[Short % of Shares Outstanding:]", shortPercentage, paragraph)
+
+    ## add logo
+    logokeyword = "[Logo]"
+    for paragraph in document.paragraphs:
+        if logokeyword in paragraph.text:
+            r = paragraph.add_run()
+            r.add_picture(imagelogo)
+
+
     # replace the text in tables
     for table in document.tables:
         for row in table.rows:
@@ -44,7 +48,7 @@ def create_doc(companyName, sector, industry, current_price,
                     find_replace("Beurswaarde:", marketCap, paragraph)
                     find_replace("Beta:", beta, paragraph)
                     find_replace("Voorwaarts dividend:", dividendRate, paragraph)
-                    find_replace("Datum:", "Datum: " + str(datetime.today()), paragraph)
+                    find_replace("Datum:", "Datum: " + str(datetime.today().date()), paragraph)
                     find_replace("Auteur:", "Auteur: " + str(author), paragraph)
 
     # input table for competitor

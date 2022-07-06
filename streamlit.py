@@ -24,10 +24,13 @@ user_input_ticker = st.sidebar.text_input("Geef ticker van het aandeel op","AAPL
 author = st.sidebar.text_input("Uw naam", "Ralph Schuurman")
 user_input_competitors = st.sidebar.text_input("Geef Namen/Tickers op van aandelen concurrenten, scheidt aandelen d.m.v. een komma:", "MSFT,TSLA")
 # Date = current date
-date = datetime.today()
-
+date = datetime.today().date
 
 col1, col2, col3 = st.columns(3)
+
+
+
+
 
 def main():
     col1.subheader('Bedrijfsinformatie')
@@ -45,7 +48,7 @@ def main():
     # Industry
     industry = 'Industry: ' + ticker.info['industry']
     # Current price
-    current_price = 'Current_price: ' + str(ticker.info['regularMarketPrice'])
+    current_price = 'Current price: ' + str(ticker.info['regularMarketPrice'])
     # 52 weeks high and low
     fiftyTwoWeek = "52 weken l/h: " + str(ticker.info['fiftyTwoWeekLow']) + ' - ' + str(ticker.info['fiftyTwoWeekHigh'])
     # 1 year target
@@ -55,7 +58,11 @@ def main():
     # Beta
     beta = "Beta: " + str(round(ticker.info['beta'],3))
 
-    dividendRate = "Forward Dividend: " + str(ticker.info['trailingAnnualDividendRate']) + " (" + str(round(ticker.info['trailingAnnualDividendYield']*100,2)) + "%)"
+    if type(ticker.info['trailingAnnualDividendRate']) == type(None):
+        dividendRate = "Dividend N/A"
+    else:
+        dividendRate = "Forward Dividend: " + str(ticker.info['trailingAnnualDividendRate']) + " (" + str(
+            round(ticker.info['trailingAnnualDividendYield'] * 100, 2)) + "%)"
 
     dividendHistory = ticker.dividends
 
@@ -64,7 +71,14 @@ def main():
     companyLogo = ticker.info['logo_url']  # company logo
 
     #save company logo to put in docx
-    response = requests.get(companyLogo, stream=True)
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+
+    response = requests.get(companyLogo, stream=True, headers = headers)
+
+    if response.status_code >= 300 or response.status_code <=199:
+        response = requests.get("https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/195px-No-Image-Placeholder.svg.png",
+                                stream=True, headers = headers)
+
     imagelogo = io.BytesIO(response.content)
 
 
@@ -90,11 +104,17 @@ def main():
 
     # create Dataframe with columns
     compare_df = pd.DataFrame(
-        columns=["Company name", "D/E", "Current Ratio", " Trailing PE", "Return on Equity", "Profit Margins",
-                 " Trailing Annual Dividend Yield", "enterpriseToEbitda"])
+        columns=["Company name", "Total D/E", "Current Ratio", " Trailing P/E", "Return on Equity", "Profit Margin",
+                 " Trailing Annual Dividend Yield", "Enterprise value/EBITDA"])
 
     for company in comparingList:
         ticker = yf.Ticker(company)
+        keys = ['trailingPE', 'debtToEquity', 'currentRatio', 'trailingPE', 'returnOnEquity', 'profitMargins',
+                'trailingAnnualDividendYield', 'enterpriseToEbitda']
+        for key in keys:
+            if key not in ticker.info:
+                ticker.info[key] = None
+
         dataList = [ticker.info['shortName'], ticker.info['debtToEquity'], ticker.info['currentRatio'],
                     ticker.info['trailingPE'], ticker.info['returnOnEquity'], ticker.info['profitMargins'],
                     ticker.info['trailingAnnualDividendYield'], ticker.info['enterpriseToEbitda']]
@@ -110,7 +130,7 @@ def main():
     # Short % of shares outstanding
     shortPercentage = "Short % of Shares Outstanding: " + str(ticker.info['shortPercentOfFloat'])
 
-
+    print(compare_df)
     # News regarding company
     #news = ticker.news
     news = "no news"
@@ -136,7 +156,7 @@ def main():
     data_3_laden = col3.text('Laden...')
     dividend_df = dividendHistory.to_frame()
     dividend_df.index = dividend_df.index.strftime('%Y-%m-%d')
-    dividend_df = dividend_df.sort_values(by='Date', ascending=False).head(10)
+    dividend_df = dividend_df.sort_values(by='Date', ascending=False).head(8)
     col3.dataframe(dividend_df)
 
     col3.subheader("Short ratio's")
